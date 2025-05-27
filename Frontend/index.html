@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Employee Bonus View</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #2c3e50;
+    line-height: 1.6;
+    background-color: #f5f7fa;
+  }
+
+  header {
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    color: white;
+    text-align: center;
+    padding: 1.5rem 1rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+
+  header h1 {
+    margin: 0 0 0.5rem;
+    font-size: 2rem;
+    font-weight: 600;
+  }
+
+  header p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1rem;
+  }
+
+  .container {
+    max-width: 800px;
+    margin: 2rem auto;
+    padding: 0 20px;
+  }
+
+  .search-section {
+    background: white;
+    border-radius: 10px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+
+  .search-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 25px;
+  }
+
+  .form-group {
+    margin-bottom: 0;
+  }
+
+  label {
+    font-weight: 600;
+    color: #2c3e50;
+    display: block;
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+  }
+
+  .required-field label::after {
+    content: " *";
+    color: #e74c3c;
+    font-size: 1em;
+    vertical-align: top;
+  }
+
+  input {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 16px;
+    transition: all 0.3s;
+    box-sizing: border-box;
+  }
+
+  input:focus {
+    border-color: #3498db;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(52,152,219,0.2);
+  }
+
+  .error-message {
+    font-size: 0.85rem;
+    color: #e74c3c;
+    margin-top: 6px;
+    display: block;
+    min-height: 20px;
+  }
+
+  .button-group {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+
+  .submit-btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: linear-gradient(135deg, #3498db, #2c3e50);
+    color: white;
+    font-size: 1rem;
+    width: auto;
+    min-width: 120px;
+  }
+
+  .submit-btn:hover {
+    background: linear-gradient(135deg, #2c3e50, #3498db);
+    transform: translateY(-2px);
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin: 20px 0;
+    color: #7f8c8d;
+    display: none;
+  }
+
+  .result-card {
+    background-color: white;
+    padding: 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    margin-top: 20px;
+  }
+
+  .result-details {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .detail-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    align-items: start;
+  }
+
+  .detail-label {
+    color: #7f8c8d;
+    font-weight: 500;
+    font-size: 0.95rem;
+  }
+
+  .detail-value {
+    font-weight: 400;
+    word-break: break-word;
+  }
+
+  @media (max-width: 768px) {
+    .container {
+      padding: 0 15px;
+    }
+
+    .search-section {
+      padding: 20px;
+    }
+
+    .detail-row {
+      grid-template-columns: 1fr;
+      gap: 5px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    header {
+      padding: 1.2rem 1rem;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+    }
+
+    header p {
+      font-size: 0.9rem;
+    }
+
+    .submit-btn {
+      width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Bonus Proposals Lookup</h1>
+    <p>"Find bonus details by employee name and ID"</p>
+  </header>
+
+  <div class="container">
+    <div class="search-section">
+      <form id="searchForm" class="search-form">
+        <div class="form-group required-field">
+          <label for="searchName">Employee Name</label>
+          <input 
+            type="text" 
+            id="searchName" 
+            name="searchName" 
+            placeholder="Enter full employee name"
+            pattern="^[A-Za-z]+( [A-Za-z]+)*$"
+            title="Employee Name must contain letters with single spaces between words"
+            required
+          >
+          <span id="nameError" class="error-message"></span>
+        </div>
+        
+        <div class="form-group required-field">
+          <label for="searchID">Employee ID</label>
+          <input 
+            type="text" 
+            id="searchID" 
+            name="searchID" 
+            placeholder="Enter employee ID"
+            pattern="^ATS0(?!000)\d{3}$"
+            title="Employee ID must start with ATS0 followed by 3 digits (e.g., ATS0123)"
+            required
+          >
+          <span id="idError" class="error-message"></span>
+        </div>
+        
+        <div class="button-group">
+          <button type="submit" class="submit-btn">Submit</button>
+        </div>
+      </form>
+    </div>
+    
+    <div id="noResults" class="no-results">
+      <p>No matching bonus proposals found for the provided name and ID.</p>
+    </div>
+    
+    <div id="searchResults"></div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchForm = document.getElementById('searchForm');
+      const searchResults = document.getElementById('searchResults');
+      const noResults = document.getElementById('noResults');
+      const searchNameInput = document.getElementById('searchName');
+      const searchIDInput = document.getElementById('searchID');
+      const nameError = document.getElementById('nameError');
+      const idError = document.getElementById('idError');
+      
+      // Search form submission
+      searchForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        
+        const nameQuery = searchNameInput.value.trim();
+        const idQuery = searchIDInput.value.trim();
+        
+        // Clear previous errors and hide all results
+        nameError.textContent = '';
+        idError.textContent = '';
+        noResults.style.display = 'none';
+        clearResults();
+        
+        // Validate inputs
+        let isValid = true;
+        
+        if (!searchNameInput.validity.valid) {
+          nameError.textContent = 'Please enter a valid name (letters and single spaces only)';
+          isValid = false;
+        }
+        
+        if (!searchIDInput.validity.valid) {
+          idError.textContent = 'Please enter a valid Employee ID (ATS0 followed by 3 digits)';
+          isValid = false;
+        }
+        
+        if (!isValid) return;
+        
+        // Search for bonus proposal
+        try {
+          const response = await fetch(
+            `http://localhost:3000/api/bonuses/search?employeeName=${encodeURIComponent(nameQuery)}&employeeID=${idQuery}`
+          );
+          
+          if (response.status === 404) {
+            noResults.style.display = 'block';
+            return;
+          }
+          
+          if (!response.ok) {
+            throw new Error('Failed to fetch proposal');
+          }
+          
+          const matchedProposal = await response.json();
+          renderBonus(matchedProposal);
+        } catch (error) {
+          console.error('Error searching proposal:', error);
+          noResults.style.display = 'block';
+        }
+      });
+      
+      // Function to clear all results
+      function clearResults() {
+        searchResults.innerHTML = '';
+      }
+      
+      // Function to render a single bonus
+      function renderBonus(proposal) {
+        clearResults();
+        
+        const resultCard = document.createElement('div');
+        resultCard.className = 'result-card';
+        resultCard.innerHTML = `
+          <div class="result-details">
+            <div class="detail-row">
+              <span class="detail-label">Employee Name</span>
+              <span class="detail-value">${proposal.employee_name}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Employee ID</span>
+              <span class="detail-value">${proposal.employee_id}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Proposal Date</span>
+              <span class="detail-value">${proposal.proposal_date}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Bonus Amount</span>
+              <span class="detail-value">₹${Number(proposal.bonus_amount).toLocaleString()}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Reason</span>
+              <span class="detail-value">${proposal.reason}</span>
+            </div>
+          </div>
+        `;
+        searchResults.appendChild(resultCard);
+      }
+    });
+  </script>
+</body>
+</html>
