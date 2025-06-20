@@ -88,6 +88,11 @@
       transition: all 0.3s;
     }
 
+    input[readonly] {
+      background-color: #f8f9fa;
+      cursor: not-allowed;
+    }
+
     textarea {
       resize: vertical;
       min-height: 60px;
@@ -102,6 +107,13 @@
     .error-message {
       font-size: 0.85rem;
       color: #e74c3c;
+      margin-top: 5px;
+      display: block;
+    }
+
+    .limit-message {
+      font-size: 0.85rem;
+      color: #7f8c8d;
       margin-top: 5px;
       display: block;
     }
@@ -265,10 +277,12 @@
       }
     }
 
-    @media (max-width: 600px) {
-      header h1 {
-        font-size: 1.5rem;
-      }
+@media (max-width: 600px) {
+  header h1 {
+    font-size: 1.5rem;
+  }
+
+
 
       .recent-bonus-section {
         padding: 15px;
@@ -309,10 +323,11 @@
             pattern="^[A-Za-z]+( [A-Za-z]+)*$"
             minlength="4"
             maxlength="30"
-            title="Employee Name must contain letters with single spaces between words" 
+            title="Employee Name must be 4-30 characters, letters and single spaces only" 
             required
           >
           <span id="employeeNameError" class="error-message"></span>
+          <span id="employeeNameLimit" class="limit-message"></span>
         </div>
         
         <div class="form-group required-field">
@@ -323,21 +338,29 @@
             name="employeeID" 
             pattern="^ATS0(?!000)\d{3}$" 
             maxlength="7"
-            title="Employee ID must start with ATS0 followed by 3 digits (e.g., ATS0123)" 
+            title="Employee ID must be ATS0 followed by 3 digits (e.g., ATS0123)" 
             required
           >
           <span id="employeeIDError" class="error-message"></span>
+          <span id="employeeIDLimit" class="limit-message"></span>
         </div>
         
         <div class="form-group required-field">
           <label for="proposalDate">Proposal Date:</label>
           <input 
-            type="date" 
+            type="text" 
+            id="proposalDateDisplay" 
+            readonly
+            placeholder="Select today's date"
+          >
+          <input 
+            type="hidden" 
             id="proposalDate" 
             name="proposalDate" 
             required
           >
           <span id="proposalDateError" class="error-message"></span>
+          <span id="proposalDateLimit" class="limit-message"></span>
         </div>
         
         <div class="form-group required-field">
@@ -347,11 +370,13 @@
             id="bonusAmount" 
             name="bonusAmount" 
             min="100" 
+            max="1000000"
             step="100"
             required 
-            title="Minimum bonus amount is ₹100"
+            title="Bonus amount must be ₹100 to ₹1,000,000"
           >
           <span id="bonusAmountError" class="error-message"></span>
+          <span id="bonusAmountLimit" class="limit-message"></span>
         </div>
         
         <div class="form-group required-field">
@@ -363,10 +388,10 @@
             required 
             minlength="10"
             maxlength="150"
-            title="Only letters and basic punctuation (. , ! ? -) with single spaces between words"
-            style="overflow-y: auto; resize: vertical;"
+            title="Reason must be 10-150 characters, letters, numbers, and basic punctuation"
           ></textarea>
           <span id="reasonError" class="error-message"></span>
+          <span id="reasonLimit" class="limit-message"></span>
         </div>
         
         <div class="button-group">
@@ -388,12 +413,42 @@
   </div>
 
   <script>
+    // Move toggleForm and closeForm to global scope
+    function closeForm() {
+      const formSection = document.getElementById('proposalFormSection');
+      const proposalForm = document.getElementById('proposalForm');
+      const proposalDateInput = document.getElementById('proposalDate');
+      const proposalDateDisplay = document.getElementById('proposalDateDisplay');
+      const today = new Date();
+      const todayISO = today.toISOString().split('T')[0];
+      formSection.classList.remove('active');
+      document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+      proposalForm.reset();
+      proposalDateInput.value = todayISO;
+      proposalDateDisplay.value = formatDate(today);
+    }
+
+    function toggleForm() {
+      const formSection = document.getElementById('proposalFormSection');
+      formSection.classList.toggle('active');
+      if (!formSection.classList.contains('active')) {
+        closeForm();
+      }
+    }
+
+    // Date formatting function
+    function formatDate(date) {
+      const options = { day: '2-digit', month: 'short', year: 'numeric' };
+      return date.toLocaleDateString('en-GB', options).replace(/ /g, '-');
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       const proposalForm = document.getElementById('proposalForm');
       const recentBonusesContainer = document.getElementById('recentBonuses');
       const employeeNameInput = document.getElementById('employeeName');
       const employeeIDInput = document.getElementById('employeeID');
       const proposalDateInput = document.getElementById('proposalDate');
+      const proposalDateDisplay = document.getElementById('proposalDateDisplay');
       const bonusAmountInput = document.getElementById('bonusAmount');
       const reasonInput = document.getElementById('reason');
       const employeeNameError = document.getElementById('employeeNameError');
@@ -402,11 +457,28 @@
       const bonusAmountError = document.getElementById('bonusAmountError');
       const reasonError = document.getElementById('reasonError');
 
-      // Set date input to only allow today
-      const today = new Date().toISOString().split('T')[0];
-      proposalDateInput.setAttribute('min', today);
-      proposalDateInput.setAttribute('max', today);
-      proposalDateInput.value = today;
+      // Set date input to today
+      const today = new Date();
+      const todayISO = today.toISOString().split('T')[0];
+      proposalDateInput.value = todayISO;
+      proposalDateDisplay.value = formatDate(today);
+
+      // Prevent editing of date field (readonly)
+      proposalDateDisplay.addEventListener('click', () => {
+        proposalDateError.textContent = 'Date is fixed to today';
+        setTimeout(() => proposalDateError.textContent = '', 3000);
+      });
+
+      // Validate date (ensure it's today)
+      function validateDate() {
+        if (proposalDateInput.value !== todayISO) {
+          proposalDateInput.setCustomValidity('Please select today\'s date');
+          proposalDateError.textContent = 'Please select today\'s date';
+        } else {
+          proposalDateInput.setCustomValidity('');
+          proposalDateError.textContent = '';
+        }
+      }
 
       // Fetch and render recent bonuses
       async function fetchRecentBonuses() {
@@ -421,7 +493,6 @@
         }
       }
 
-      // Render recent bonuses
       function renderRecentBonuses(bonusProposals) {
         recentBonusesContainer.innerHTML = '';
         bonusProposals.forEach(proposal => {
@@ -439,7 +510,7 @@
               </div>
               <div class="detail-row">
                 <span class="detail-label">Proposal Date</span>
-                <span>${proposal.proposal_date}</span>
+                <span>${formatDate(new Date(proposal.proposal_date))}</span>
               </div>
               <div class="detail-row">
                 <span class="detail-label">Bonus Amount</span>
@@ -455,74 +526,88 @@
         });
       }
 
-      // Initial fetch
       fetchRecentBonuses();
 
-      // Validate date input
-      proposalDateInput.addEventListener('input', () => {
-        const selectedDate = proposalDateInput.value;
-        if (selectedDate !== today) {
-          proposalDateInput.setCustomValidity('Please select today\'s date');
-          proposalDateError.textContent = 'Please select today\'s date';
-        } else {
-          proposalDateInput.setCustomValidity('');
-          proposalDateError.textContent = '';
-        }
-      });
-
-      // Validate employee ID for duplicates
-      employeeIDInput.addEventListener('input', async () => {
-        const employeeID = employeeIDInput.value;
-        if (!employeeIDInput.validity.valid) {
-          employeeIDError.textContent = 'Format: ATS0 followed by 3 digits (e.g., ATS0123)';
-          return;
-        }
-        try {
-          const response = await fetch(`http://localhost:3000/api/bonuses/search?employeeID=${employeeID}`);
-          if (response.status === 200) {
-            employeeIDInput.setCustomValidity('This Employee ID has already been submitted');
-            employeeIDError.textContent = 'This Employee ID has already been submitted';
-          } else {
-            employeeIDInput.setCustomValidity('');
-            employeeIDError.textContent = '';
-          }
-        } catch (error) {
-          console.error('Error checking employee ID:', error);
-        }
-      });
-
+      // Input validation
       function handleInputValidation(event) {
         const input = event.target;
-        const value = input.value;
+        const value = input.value.trim();
         
+        // Prevent multiple spaces
         if (event.key === ' ' && value.slice(-1) === ' ') {
           event.preventDefault();
           return;
         }
-        
+
+        // Employee Name validation
         if (input === employeeNameInput) {
           const isValid = /^[A-Za-z]+( [A-Za-z]+)*$/.test(value);
-          if (!isValid && value.trim() !== '') {
-            input.setCustomValidity('Only letters and single spaces between words allowed');
-            employeeNameError.textContent = 'Only letters and single spaces between words allowed';
+          if (!isValid && value !== '') {
+            employeeNameError.textContent = 'Only letters and single spaces allowed';
+            input.setCustomValidity('Invalid name format');
+          } else if (value.length < 4 && value !== '') {
+            employeeNameError.textContent = 'Minimum 4 characters required';
+            input.setCustomValidity('Too short');
+          } else if (value.length > 30) {
+            employeeNameError.textContent = 'Maximum 30 characters allowed';
+            input.setCustomValidity('Too long');
           } else {
-            input.setCustomValidity('');
             employeeNameError.textContent = '';
+            input.setCustomValidity('');
           }
         }
-        
-        if (input === reasonInput) {
-          const isValid = /^[A-Za-z0-9.,!?\-()]+( [A-Za-z0-9.,!?\-()]+)*$/.test(value);
-          if (!isValid && value.trim() !== '') {
-            input.setCustomValidity('Only letters, numbers, punctuation and single spaces allowed');
-            reasonError.textContent = 'Only letters, numbers, punctuation and single spaces allowed';
+
+        // Employee ID validation
+        if (input === employeeIDInput) {
+          const isValid = /^ATS0(?!000)\d{3}$/.test(value);
+          if (!isValid && value !== '') {
+            employeeIDError.textContent = 'Format: ATS0 followed by 3 digits (e.g., ATS0123)';
+            input.setCustomValidity('Invalid ID format');
           } else {
+            employeeIDError.textContent = '';
             input.setCustomValidity('');
+          }
+        }
+
+        // Bonus Amount validation
+        if (input === bonusAmountInput) {
+          const amount = parseInt(value);
+          if (value !== '' && (amount < 100 || isNaN(amount))) {
+            bonusAmountError.textContent = 'Minimum bonus amount is ₹100';
+            input.setCustomValidity('Too low');
+          } else if (amount > 1000000) {
+            bonusAmountError.textContent = 'Maximum bonus amount is ₹1,000,000';
+            input.setCustomValidity('Too high');
+          } else {
+            bonusAmountError.textContent = '';
+            input.setCustomValidity('');
+          }
+        }
+
+        // Reason validation
+        if (input === reasonInput) {
+          const isValid = /^[A-Za-z0-9\s.,!?()-]{10,150}$/.test(value) && 
+                          !/^[.,!?()-]+$/.test(value);
+          if (!isValid && value !== '') {
+            reasonError.textContent = 'Letters, numbers, basic punctuation (10-150 characters)';
+            input.setCustomValidity('Invalid reason format');
+          } else if (value.length < 10 && value !== '') {
+            reasonError.textContent = 'Minimum 10 characters required';
+            input.setCustomValidity('Too short');
+          } else if (value.length > 150) {
+            reasonError.textContent = 'Maximum 150 characters allowed';
+            input.setCustomValidity('Too long');
+          } else if (/^[.,!?()-]+$/.test(value)) {
+            reasonError.textContent = 'Reason cannot consist only of punctuation';
+            input.setCustomValidity('Invalid content');
+          } else {
             reasonError.textContent = '';
+            input.setCustomValidity('');
           }
         }
       }
 
+      // Clean up spaces
       function cleanUpSpaces(event) {
         const input = event.target;
         let original = input.value;
@@ -530,57 +615,65 @@
         if (original !== corrected) {
           input.value = corrected;
         }
+        handleInputValidation({ target: input });
       }
 
-      employeeNameInput.addEventListener('keydown', handleInputValidation);
+      // Attach event listeners
       employeeNameInput.addEventListener('input', handleInputValidation);
       employeeNameInput.addEventListener('blur', cleanUpSpaces);
       
+      employeeIDInput.addEventListener('input', async (event) => {
+        handleInputValidation(event);
+        const employeeID = employeeIDInput.value;
+        if (employeeIDInput.validity.valid && employeeID !== '') {
+          try {
+            const response = await fetch(`http://localhost:3000/api/bonuses/search?employeeID=${employeeID}`);
+            if (response.status === 200) {
+              employeeIDError.textContent = 'This Employee ID has already been submitted';
+              employeeIDInput.setCustomValidity('Duplicate ID');
+            } else {
+              employeeIDError.textContent = '';
+              employeeIDInput.setCustomValidity('');
+            }
+          } catch (error) {
+            console.error('Error checking employee ID:', error);
+          }
+        }
+      });
       employeeIDInput.addEventListener('blur', cleanUpSpaces);
-      
-      reasonInput.addEventListener('keydown', handleInputValidation);
+
+      bonusAmountInput.addEventListener('input', handleInputValidation);
       reasonInput.addEventListener('input', handleInputValidation);
       reasonInput.addEventListener('blur', cleanUpSpaces);
 
-      bonusAmountInput.addEventListener('input', () => {
-        if (bonusAmountInput.value.length > 7) {
-          bonusAmountInput.value = bonusAmountInput.value.slice(0,7);
-        }
-        if (parseInt(bonusAmountInput.value) < 100) {
-          bonusAmountError.textContent = 'Minimum bonus amount is ₹100';
-          bonusAmountInput.setCustomValidity('Minimum bonus amount is ₹100');
-        } else {
-          bonusAmountError.textContent = '';
-          bonusAmountInput.setCustomValidity('');
-        }
-      });
-
+      // Form submission
       proposalForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         
-        cleanUpSpaces({target: employeeNameInput});
-        cleanUpSpaces({target: employeeIDInput});
-        cleanUpSpaces({target: reasonInput});
-        
+        cleanUpSpaces({ target: employeeNameInput });
+        cleanUpSpaces({ target: employeeIDInput });
+        cleanUpSpaces({ target: reasonInput });
+        validateDate();
+
         if (!proposalForm.checkValidity()) {
           if (!employeeNameInput.validity.valid) {
             employeeNameError.textContent = employeeNameInput.validationMessage || 
-              'Please enter a valid name (letters and single spaces only)';
+              'Please enter a valid name (4-30 characters, letters and single spaces)';
           }
           if (!employeeIDInput.validity.valid) {
             employeeIDError.textContent = employeeIDInput.validationMessage || 
               'Please enter a valid Employee ID (ATS0 followed by 3 digits)';
           }
-          if (!proposalDateInput.validity.valid || proposalDateInput.value !== today) {
+          if (!proposalDateInput.validity.valid) {
             proposalDateError.textContent = 'Please select today\'s date';
           }
           if (!bonusAmountInput.validity.valid) {
             bonusAmountError.textContent = bonusAmountInput.validationMessage || 
-              'Minimum bonus amount is ₹100';
+              'Bonus amount must be ₹100 to ₹1,000,000';
           }
           if (!reasonInput.validity.valid) {
             reasonError.textContent = reasonInput.validationMessage || 
-              'Please enter a valid reason (letters, numbers, punctuation and single spaces)';
+              'Please enter a valid reason (10-150 characters)';
           }
           return;
         }
@@ -609,7 +702,8 @@
 
           await fetchRecentBonuses();
           proposalForm.reset();
-          proposalDateInput.value = today;
+          proposalDateInput.value = todayISO;
+          proposalDateDisplay.value = formatDate(today);
           closeForm();
         } catch (error) {
           console.error('Error submitting proposal:', error);
@@ -617,22 +711,6 @@
         }
       });
     });
-
-    function closeForm() {
-      const formSection = document.getElementById('proposalFormSection');
-      formSection.classList.remove('active');
-      document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-      document.getElementById('proposalForm').reset();
-      document.getElementById('proposalDate').value = new Date().toISOString().split('T')[0];
-    }
-
-    function toggleForm() {
-      const formSection = document.getElementById('proposalFormSection');
-      formSection.classList.toggle('active');
-      if (!formSection.classList.contains('active')) {
-        closeForm();
-      }
-    }
   </script>
 </body>
 </html>
