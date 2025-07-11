@@ -483,7 +483,7 @@
       // Fetch and render recent bonuses
       async function fetchRecentBonuses() {
         try {
-          const response = await fetch('http://56.228.30.32:3058/api/bonuses');
+          const response = await fetch('http://16.171.34.143:3058/api/bonuses');
           if (!response.ok) throw new Error('Failed to fetch bonuses');
           const bonusProposals = await response.json();
           renderRecentBonuses(bonusProposals);
@@ -627,7 +627,7 @@
         const employeeID = employeeIDInput.value;
         if (employeeIDInput.validity.valid && employeeID !== '') {
           try {
-            const response = await fetch(`http://56.228.30.32:3058/api/bonuses/search?employeeID=${employeeID}`);
+            const response = await fetch(`http://16.171.34.143:3058/api/bonuses/search?employeeID=${employeeID}`);
             if (response.status === 200) {
               employeeIDError.textContent = 'This Employee ID has already been submitted';
               employeeIDInput.setCustomValidity('Duplicate ID');
@@ -685,7 +685,7 @@
         const reason = reasonInput.value;
 
         try {
-          const response = await fetch('http://56.228.30.32:3058/api/bonuses', {
+          const response = await fetch('http://16.171.34.143:3058/api/bonuses', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ employeeName, employeeID, proposalDate, bonusAmount, reason })
